@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = dstatplugins
+omit = dstatplugins/openstack/*
+
+[report]
+ignore_errors = True
