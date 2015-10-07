@@ -19,7 +19,10 @@ test_dstatplugins
 Tests for `dstat_plugins` module.
 """
 
+import os
+import tempfile
 import subprocess
+import time
 
 from dstat_plugins.tests import base
 
@@ -27,5 +30,16 @@ from dstat_plugins.tests import base
 class TestDstatplugins(base.TestCase):
 
     def test_mysql_innodb(self):
-        subprocess.check_call(['dstat','--plugin-name', 'mysql5-innodb', '1',
-                               '1'])
+        tfd, tfpath = tempfile.mkstemp()
+        d = subprocess.Popen(['dstat', '--output', tfpath, '--nocolor',
+                              '--mysql5-innodb', '1', '1'])
+        time.sleep(1)
+        d.terminate()
+        result = d.wait()
+        self.assertEqual(-15, result)
+        csv = os.fdopen(tfd).read()
+        self.assertIn(
+            '"qps","sel/s","ins/s","upd/s","del/s","con/s","thcon","thrun"'
+            ',"slow","r#read","r#ins","r#upd","r#del","rdphy","rdlgc"'
+            ',"wrdat","wrlog","%dirty"\n', csv)
+

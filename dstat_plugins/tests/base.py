@@ -15,19 +15,29 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os
+import subprocess
+
 import fixtures
-from oslotest import base
+import testtools
 import testresources
 
 
 class PluginHome(testresources.TestResourceManager):
-    def make(self):
-        self.testhome = self.useFixture(fixtures.TempHomeDir())
+    def make(self, dependency_resources):
+        self.nt = fixtures.NestedTempfile()
+        self.nt.setUp()
+        self.testhome = fixtures.TempHomeDir()
+        self.testhome.setUp()
         self.path = os.path.join(self.testhome.path, '.dstat')
         subprocess.check_call(['install-dstat-plugins', self.path])
 
+    def clean(self, resource):
+        self.testhome.cleanUp()
+        self.nt.cleanUp()
 
-class TestCase(base.BaseTestCase):
+
+class TestCase(testtools.TestCase, testresources.ResourcedTestCase):
 
     resources = [("plugin_home", PluginHome())]
 
