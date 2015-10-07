@@ -19,8 +19,8 @@ import os
 import subprocess
 
 import fixtures
-import testtools
 import testresources
+import testtools
 
 
 class PluginHome(testresources.TestResourceManager):

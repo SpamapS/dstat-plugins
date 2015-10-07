@@ -1,6 +1,14 @@
 CHANGES
 =======
 
+0.1.0
+-----
+
+* Fixing trove categories
+* Test at least one plugin
+* Fix install script
+* Move plugins to the python package
+* Adding pbr machinery -- not working
 * Convert into plugins only
 * Rename AsciiDoc files to use the .adoc extension (supported by GitHub)
 * Added --cpu-use plugin with onlu CPU usage per CPU (Christian Neukirchen)

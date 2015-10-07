@@ -1,10 +1,11 @@
 import glob
-import shutil
-import sys
 import os
 import os.path
+import shutil
+import sys
 
 import pkg_resources as pr
+
 
 def install():
     destdir = sys.argv[1]

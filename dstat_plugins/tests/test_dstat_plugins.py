@@ -20,8 +20,8 @@ Tests for `dstat_plugins` module.
 """
 
 import os
-import tempfile
 import subprocess
+import tempfile
 import time
 
 from dstat_plugins.tests import base
@@ -42,4 +42,3 @@ class TestDstatplugins(base.TestCase):
             '"qps","sel/s","ins/s","upd/s","del/s","con/s","thcon","thrun"'
             ',"slow","r#read","r#ins","r#upd","r#del","rdphy","rdlgc"'
             ',"wrdat","wrlog","%dirty"\n', csv)
-
