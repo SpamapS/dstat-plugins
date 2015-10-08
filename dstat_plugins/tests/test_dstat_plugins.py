@@ -31,14 +31,12 @@ class TestDstatplugins(base.TestCase):
 
     def test_mysql_innodb(self):
         tfd, tfpath = tempfile.mkstemp()
-        d = subprocess.Popen(['dstat', '--output', tfpath, '--nocolor',
+        d = subprocess.Popen(['dstat', '--debug', '--debug', '-c',
+                              '--output', tfpath, '--nocolor',
                               '--mysql5-innodb', '1', '1'])
         time.sleep(1)
         d.terminate()
         result = d.wait()
         self.assertEqual(-15, result)
         csv = os.fdopen(tfd).read()
-        self.assertIn(
-            '"qps","sel/s","ins/s","upd/s","del/s","con/s","thcon","thrun"'
-            ',"slow","r#read","r#ins","r#upd","r#del","rdphy","rdlgc"'
-            ',"wrdat","wrlog","%dirty"\n', csv)
+        self.assertIn('--mysql5-innodb', csv)
