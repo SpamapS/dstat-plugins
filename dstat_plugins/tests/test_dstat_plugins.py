@@ -42,3 +42,11 @@ class TestDstatplugins(base.TestCase):
         self.assertEqual(-15, self._run_plugin(['--mysql5-innodb', '1', '1']))
         csv = os.fdopen(self.temp_fd).read()
         self.assertIn('--mysql5-innodb', csv)
+
+    def test_openstack_rabbitmq(self):
+        self.assertEqual(-15, self._run_plugin(
+            ['--openstack-rabbitmq', '1', '1']))
+        csv = os.fdopen(self.temp_fd).read()
+        self.assertIn('novaq', csv)
+        self.assertIn('cinderq', csv)
+        self.assertIn('otherq', csv)
