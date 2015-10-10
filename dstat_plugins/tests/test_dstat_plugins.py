@@ -29,14 +29,16 @@ from dstat_plugins.tests import base
 
 class TestDstatplugins(base.TestCase):
 
-    def test_mysql_innodb(self):
-        tfd, tfpath = tempfile.mkstemp()
+    def _run_plugin(self, args):
+        self.temp_fd, self.temp_path = tempfile.mkstemp()
         d = subprocess.Popen(['dstat', '--debug', '--debug', '-c',
-                              '--output', tfpath, '--nocolor',
-                              '--mysql5-innodb', '1', '1'])
+                              '--output', self.temp_path,
+                              '--nocolor'] + args)
         time.sleep(1)
         d.terminate()
-        result = d.wait()
-        self.assertEqual(-15, result)
-        csv = os.fdopen(tfd).read()
+        return d.wait()
+
+    def test_mysql_innodb(self):
+        self.assertEqual(-15, self._run_plugin(['--mysql5-innodb', '1', '1']))
+        csv = os.fdopen(self.temp_fd).read()
         self.assertIn('--mysql5-innodb', csv)
