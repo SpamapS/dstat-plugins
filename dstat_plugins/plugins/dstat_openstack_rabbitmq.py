@@ -39,14 +39,14 @@ DSTAT_RABBITMQ_API_PASS = os.environ.get('DSTAT_RABBITMQ_PASS',
 
 class dstat_plugin(dstat):
     """
-    rabbitmq-queues
+    openstack-rabbitmq
 
-    display queue counts and message totals in RabbitMQ
+    display queue length and rate for openstack queues
     """
     def __init__(self):
         self.types = ['d', 'f']
         self.cols = 2
-        scale = 1
+        scale = 1000
         self.vars = ["novaq","cinderq","otherq"]
         self.name = self.vars
         self.nick = ["len", "rate"]
@@ -87,22 +87,38 @@ class dstat_plugin(dstat):
         if not isinstance(content, list):
             self._extract_fail()
             return
+        newvals = {}
         for q in content:
             if not isinstance(q, dict):
                 continue
             if "name" not in q or "messages" not in q:
                 continue
-            if q["name"].startswith("conductor"):
+            qname = q["name"]
+            if qname.startswith("conductor"):
                 target = "novaq"
-            elif q["name"].startswith("scheduler"):
+            elif qname.startswith("scheduler"):
                 target = "novaq"
-            elif q["name"].startswith("compute"):
+            elif qname.startswith("compute"):
                 target = "novaq"
-            elif q["name"].startswith("cinder"):
+            elif qname.startswith("cinder"):
                 target = "cinderq"
             else:
                 target = "otherq"
-            self.val[target][0] = q["messages"]
+            if "message_stats" not in q:
+                if op.debug > 2:
+                    print "osmq: no message_stats for %s" % (qname,)
+            newval = q["messages"]
+            if newval and op.debug > 2:
+                print "osmq: %s -> %s += %d" % (qname, target, newval)
+            if target in newvals:
+                newvals[target] += newval
+            else:
+                newvals[target] = newval
+        for target, newval in newvals.items():
+            self.set2[target][0] += newval
+            self.val[target][0] = self.set2[target][0] - self.set1[target][0]
             if "message_stats" in q and "deliver_details" in q["message_stats"]:
                 self.val[target][1] = float(
                     q["message_stats"]["deliver_details"]["rate"])
+        if step == op.delay:
+            self.set1.update(self.set2)
