@@ -44,12 +44,12 @@ class dstat_plugin(dstat):
     display queue length and rate for openstack queues
     """
     def __init__(self):
-        self.types = ['d', 'f']
+        self.types = ['d', 'd']
         self.cols = 2
-        scale = 1000
-        self.vars = ["novaq","cinderq","otherq"]
+        scale = 1
+        self.vars = ["novaq", "cinderq", "notifq", "otherq"]
         self.name = self.vars
-        self.nick = ["len", "rate"]
+        self.nick = ["qlen", "qpub"]
 
         self.conn = None
         self.auth = base64.encodestring('%s:%s' % (DSTAT_RABBITMQ_API_USER,
@@ -102,23 +102,38 @@ class dstat_plugin(dstat):
                 target = "novaq"
             elif qname.startswith("cinder"):
                 target = "cinderq"
+            elif qname.startswith("notification"):
+                target = "notifq"
             else:
                 target = "otherq"
             if "message_stats" not in q:
-                if op.debug > 2:
+                if op.debug > 3:
                     print "osmq: no message_stats for %s" % (qname,)
             newval = q["messages"]
             if newval and op.debug > 2:
-                print "osmq: %s -> %s += %d" % (qname, target, newval)
-            if target in newvals:
-                newvals[target] += newval
+                print "osmq: len %s -> %s += %d" % (qname, target, newval)
+            if "message_stats" in q and "publish" in q["message_stats"]:
+                newpub = q["message_stats"]["publish"]
             else:
-                newvals[target] = newval
+                newpub = 0
+            if newpub and op.debug > 2:
+                print "osmq: pub %s -> %s += %d" % (qname, target, newpub)
+            if target in newvals:
+                newvals[target][0] += newval
+                newvals[target][1] += newpub
+            else:
+                newvals[target] = [newval, newpub]
+        if op.debug > 2:
+            print "osmq: set1=%s" % (self.set1)
+            print "osmq: set2=%s" % (self.set2)
         for target, newval in newvals.items():
-            self.set2[target][0] += newval
-            self.val[target][0] = self.set2[target][0] - self.set1[target][0]
-            if "message_stats" in q and "deliver_details" in q["message_stats"]:
-                self.val[target][1] = float(
-                    q["message_stats"]["deliver_details"]["rate"])
-        if step == op.delay:
-            self.set1.update(self.set2)
+            for x in (0, 1):
+                if op.debug > 1 and newval[x] != self.set1[target][x]:
+                    print "osmq: DELTA target=%s x=%d old=%d new=%d" % (
+                        target, x, self.set1[target][x], newval[x])
+                if op.debug and self.set1[target] is self.set2[target]:
+                    print "osmq: REFERENCE ERROR"
+                self.set2[target][x] = newval[x]
+                self.val[target][x] = newval[x] - self.set1[target][x]
+                if step == op.delay:
+                    self.set1[target][x] = newval[x]
